@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-kc-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: test.keycloak.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-kc-service
+                port:
+                  number: 8443
