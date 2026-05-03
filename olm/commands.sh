@@ -21,9 +21,4 @@ kubectl krew install operator
 
 kubectl operator install cert-manager -n operators --channel stable --approval Automatic
 
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-kubectl create namespace gitlab-system
-
-kubectl operator install gitlab-operator-kubernetes -C -n gitlab-system --channel stable --approval Automatic
 

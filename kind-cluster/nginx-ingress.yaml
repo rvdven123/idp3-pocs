@@ -1,0 +1,8 @@
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  # Ensure this value matches `spec.chart.values.global.ingress.class`
+  # in the GitLab CR on the next step.
+  name: gitlab-nginx
+spec:
+  controller: k8s.io/ingress-nginx

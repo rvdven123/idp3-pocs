@@ -1,0 +1,49 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg-b
+  namespace: database
+spec:
+  instances: 1
+
+  bootstrap:
+    pg_basebackup:
+      source: pg-a
+
+  replica:
+    enabled: true
+    source: pg-a
+
+  storage:
+    size: 1Gi
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  postgresql:
+    parameters:
+      shared_buffers: "64MB"
+      max_connections: "30"
+
+  externalClusters:
+    - name: pg-a
+      connectionParameters:
+        host: a-control-plane
+        port: "30432"
+        user: streaming_replica
+        dbname: postgres
+        sslmode: require
+      sslKey:
+        name: pg-a-replication
+        key: tls.key
+      sslCert:
+        name: pg-a-replication
+        key: tls.crt
+      sslRootCert:
+        name: pg-a-ca
+        key: ca.crt

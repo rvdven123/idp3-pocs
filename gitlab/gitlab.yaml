@@ -5,13 +5,17 @@ metadata:
   namespace: gitlab-system
 spec:
   chart:
-    version: "9.11.0" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/<OPERATOR_VERSION>/CHART_VERSIONS
+    version: "9.11.1"
     values:
+      nginx-ingress:
+        enabled: true
       global:
         hosts:
-          domain: javee.nl # use a real domain here
-          hostPrefix: gitlab
+          domain: 127-0-0-1.nip.io
+          https: false
         ingress:
-          configureCertmanager: true
-      certmanager-issuer:
-        email: r.van.de.ven@javee.nl # use your real email address here
+          configureCertmanager: false
+          tls:
+            enabled: false
+      certmanager:
+        install: false
