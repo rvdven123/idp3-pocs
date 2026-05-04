@@ -33,8 +33,8 @@ spec:
   externalClusters:
     - name: pg-a
       connectionParameters:
-        host: a-control-plane
-        port: "30432"
+        host: pg-a-rw.database.svc.clusterset.local
+        port: "5432"
         user: streaming_replica
         dbname: postgres
         sslmode: require

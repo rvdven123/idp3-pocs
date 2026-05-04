@@ -1,10 +1,32 @@
+#build everthing with a docker container inside the same docker network 
+#as the kind control plane containers to prevent the issue with submariner that the control-plane of cluster a cannot access the control-plane
+# of cluster b via localhost
+docker build --pull --rm  -t 'submarine-toolbox:latest' . 
+
+docker run -it --rm \
+  --network kind-shared \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ~/.kube:/root/.kube \
+  -v "$PWD":/work \
+  -w /work \
+  submarine-toolbox:latest 
+
 docker network create kind-shared
 
+kind delete cluster -n a
 kind create cluster --name a --config kind-a.yaml
 docker network connect kind-shared a-control-plane
 
+kind delete cluster -n b
 kind create cluster --name b --config kind-b.yaml
 docker network connect kind-shared b-control-plane
+
+docker network inspect kind-shared
+
+#patch the kubeconfig to use the control-plane hostnames instead of localhost, 
+# as kind by default uses localhost with random ports to access the api-server, but submariner needs to access the api-server of the other cluster via the control-plane hostnames
+kubectl config set-cluster kind-a --server=https://a-control-plane:6443
+kubectl config set-cluster kind-b --server=https://b-control-plane:6443
 
 #install the operator in cluster a
 kubectl --context kind-a   --server-side --force-conflicts  apply -f \
@@ -15,9 +37,9 @@ kubectl --context kind-a create ns database
 kubectl --context kind-a apply -f cnpg-a.yaml -n database
 kubectl --context kind-a get deploy -n cnpg-system cnpg-controller-manager
 kubectl --context kind-a describe deployment/cnpg-controller-manager -n cnpg-system 
-kubectl --context kind-a get pods -n database
+kubectl --context kind-a get pods -n database -w
 
-#expose nodeport of cluster a to b
+#expose nodeport of cluster a to b, but not when using submariner, as submariner will handle the connectivity between the clusters, and we can use the internal cluster hostnames to access the api-server of the other cluster
 kubectl --context kind-a delete -f kind_a_expose_nodeport.yaml
 kubectl --context kind-a apply -f kind_a_expose_nodeport.yaml
 docker exec b-control-plane curl telnet://a-control-plane:30432
@@ -55,7 +77,11 @@ kubectl --context kind-b delete -f \
 #create operator in kind-b
 kubectl --context kind-b --server-side --force-conflicts  apply -f \
   https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.26/releases/cnpg-1.26.0.yaml
-kubectl --context kind-b get deploy -n cnpg-system cnpg-controller-manager
+kubectl --context kind-b get deploy -n cnpg-system cnpg-controller-manager -w
+
+# run submariner to connect the clusters and test the replication between the clusters,
+#see commands_submariner.sh for the commands
+./commands_submariner.sh
 
 #create postgres cluster b
 kubectl --context kind-b delete -f cnpg-b.yaml -n database

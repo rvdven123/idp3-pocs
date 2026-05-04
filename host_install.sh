@@ -1,7 +1,5 @@
 #Tools nodig op de host machine:
 
-
-
 sudo apt install -y yq
 
 #github client
